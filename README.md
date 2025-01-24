@@ -28,3 +28,7 @@ You are a startup aiming to create a "tool" that can analyze text-based patterns
 - Doku: 
 @Lucie
 
+##Meeting Protocol 24/01
+- created Kanban Tickets
+- discussed data upload
+- Next Meeting on Monday 27/01
