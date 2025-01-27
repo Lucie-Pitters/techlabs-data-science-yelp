@@ -32,6 +32,7 @@ You are a startup aiming to create a "tool" that can analyze text-based patterns
 - created Kanban Tickets
 - discussed data upload
 - Next Meeting on Monday 27/01
+  
 ##Meeting Protocol 27/01
 - Create & assign data cleaning/exploration tasks
 - Next Meeting on Friday 31/01
