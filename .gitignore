@@ -210,3 +210,4 @@ data/reviews_2021-10.json
 data/reviews_2021-11.json
 data/reviews_2021-12.json
 data/reviews_2022-01.json
+data/intermediate/tfidf_scores.csv
