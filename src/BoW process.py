@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 
 # Load the JSON file
-with open('D:/TechLab Project/techlabs-data-science-yelp/data/raw/reviews_2021-01.json', 'r') as file:
+with open('data/raw/reviews_2021-01.json', 'r') as file:
     reviews = [json.loads(line) for line in file]
 
 # Extract the text from each review
@@ -28,6 +28,6 @@ bow_df = pd.DataFrame(bow_array, columns=feature_names)
 bow_df.insert(0, 'review_text', texts)
 
 # Save the DataFrame to a CSV file
-bow_df.to_csv('D:/TechLab Project/techlabs-data-science-yelp/data/intermediate/bow_vectors.csv', index=False)
+bow_df.to_csv('data/intermediate/bow_vectors.csv', index=False)
 
 print("Bag-of-Words vectors have been saved to 'bow_vectors.csv'.")
