@@ -82,8 +82,8 @@ def process_dataset(file_path, output_dir):
 
 # Example usage
 if __name__ == "__main__":
-    file_path = "D:/TechLab Project/techlabs-data-science-yelp/data/raw/reviews_2021-01.json"  # Update this with the actual dataset file path
-    output_dir = "D:/TechLab Project/techlabs-data-science-yelp/data/intermediate"  # Define output directory
+    file_path = "data/raw/reviews_2021-01.json"  # Update this with the actual dataset file path
+    output_dir = "data/intermediate"  # Define output directory
     processed_df, tfidf_df = process_dataset(file_path, output_dir)
     print(processed_df[['text', 'processed_text']].head())
     print(tfidf_df.head())
