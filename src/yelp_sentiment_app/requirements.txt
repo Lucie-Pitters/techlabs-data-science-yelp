@@ -1,0 +1,7 @@
+streamlit
+streamlit-navigation-bar
+nltk
+pandas
+matplotlib
+seaborn
+wordcloud
