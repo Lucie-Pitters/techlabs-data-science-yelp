@@ -211,3 +211,8 @@ data/reviews_2021-11.json
 data/reviews_2021-12.json
 data/reviews_2022-01.json
 data/intermediate/tfidf_scores.csv
+data/raw/yelp_academic_dataset_business.json
+data/raw/yelp_academic_dataset_checkin.json
+data/raw/yelp_academic_dataset_review.json
+data/raw/yelp_academic_dataset_tip.json
+data/raw/yelp_academic_dataset_user.json
