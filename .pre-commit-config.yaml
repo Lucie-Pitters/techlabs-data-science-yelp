@@ -1,0 +1,15 @@
+repos:
+-   repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.8.5
+    hooks:
+    -   id: nbqa-flake8
+        args: ["--ignore=E501,W503,W293,E266,E402"]
+
+
+    -   id: nbqa-black
+
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.5.0
+  hooks:
+    - id: nbstripout
+
