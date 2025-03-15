@@ -216,3 +216,6 @@ data/raw/yelp_academic_dataset_checkin.json
 data/raw/yelp_academic_dataset_review.json
 data/raw/yelp_academic_dataset_tip.json
 data/raw/yelp_academic_dataset_user.json
+/yelp_sentiment_app/pages/__pycache__
+/data/raw
+/yelp_sentiment_app/__pycache__
