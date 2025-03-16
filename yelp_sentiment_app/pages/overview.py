@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 from utils import load_large_data, preprocess_and_analyze
 from wordcloud import WordCloud
 import uuid
@@ -11,10 +10,9 @@ st.title("📊 Yelp Reviews Sentiment Analysis")
 st.text("This tool allows you to upload Yelp reviews and business data, analyze the sentiment of customer feedback, and explore visual insights such as sentiment distribution over time, word clouds, and business-specific sentiment analysis.")
 st.page_link("pages/about.py", label="Learn more about our team and the project", icon="🚀")
 
-uploaded_reviews = st.file_uploader("Upload Yelp Reviews (JSON)", type=["json"])
-uploaded_businesses = st.file_uploader("Upload Yelp Business Data (JSON)", type=["json"])
+uploaded_files = st.file_uploader("Upload Yelp Dataset Files (Business, Reviews, Users)", type=["json"], accept_multiple_files=True)
 
-def overview(df):
+def overview(df, user_df, business_df):
     if df.empty:
         st.warning("No reviews available for this selection.")
         return
@@ -55,8 +53,38 @@ def overview(df):
     with col1:
         st.subheader("📝 Sentiment Classification")
         
-        st.write(df[['text', 'Sentiment']].head(100))
+        # Add user and business names to the DataFrame for display
+        df = df.merge(user_df, on="user_id", how="left")
+        df = df.merge(business_df, on="business_id", how="left")
+        
+        # Replace NaN user names with 'Anonymous'
+        df['name_x'].fillna('Anonymous', inplace=True)
+
+        # Create a new DataFrame with the necessary columns for display
+        display_df = df[['text', 'Sentiment', 'name_x', 'name_y', 'stars_x', 'date']]
+        display_df.columns = ['Review Text', 'Sentiment', 'User Name', 'Business Name', 'Stars', 'Date']
+
+        # Add a custom index starting from 1
+        display_df.index = display_df.index + 1
+
+        # Function to color sentiments
+        def color_sentiment(val):
+            color = 'gray'  # default color for Neutral
+            if val == "Positive":
+                color = 'lightgreen'
+            elif val == "Negative":
+                color = 'lightred'
+            return f'background-color: {color}'
+
+        # Apply color formatting to the Sentiment column
+        styled_df = display_df.style.applymap(color_sentiment, subset=['Sentiment'])
+
+        # Display the DataFrame in an interactive, sortable way
+        st.dataframe(styled_df, use_container_width=True)
+
+        # Download processed data button
         st.download_button("Download Processed Data", df.to_csv(index=False), "processed_reviews.csv", "text/csv", key=f"download_{uuid.uuid4()}")
+
 
     with col2:
         st.write("### Sentiment Distribution Over Time")
@@ -131,41 +159,47 @@ def business_search(businesses_df, reviews_df):
         if business_df.empty:
             st.info("⚠️ This business has no reviews yet.")
         else:
-            overview(business_df)
+            overview(business_df, user_df, businesses_df)
 
 
-if uploaded_reviews and uploaded_businesses:
-    df = load_large_data(uploaded_reviews)
+# Dictionary to store uploaded files
+datasets = {}
 
-    # Extract available years from the dataset
-    df['date'] = pd.to_datetime(df['date'])  # Ensure date is in datetime format
-    available_years = sorted(df['date'].dt.year.unique(), reverse=True)
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        if "yelp_academic_dataset_business.json" in uploaded_file.name:
+            datasets["business"] = uploaded_file
+        elif "yelp_academic_dataset_review.json" in uploaded_file.name:
+            datasets["review"] = uploaded_file
+        elif "yelp_academic_dataset_user.json" in uploaded_file.name:
+            datasets["user"] = uploaded_file
 
-    # User selects a year to analyze
+if "review" in datasets and "business" in datasets:
+    review_df = load_large_data(datasets["review"])
+    
+    review_df['date'] = pd.to_datetime(review_df['date'])  # Ensure date is in datetime format
+    available_years = sorted(review_df['date'].dt.year.unique(), reverse=True)
     selected_year = st.selectbox("Select a Year to Analyze", available_years, index=0)
+    review_df = review_df[review_df['date'].dt.year == selected_year]
 
-    # Filter dataset by selected year
-    df = df[df['date'].dt.year == selected_year]
-
-    businesses_df = load_large_data(uploaded_businesses, chunksize=10000, data_type="business")
+    business_df = load_large_data(datasets["business"], chunksize=10000, data_type="business")
+    user_df = load_large_data(datasets["user"], chunksize=10000, data_type="user")
     sentiment_method = st.selectbox("Choose Sentiment Analysis Method", ["VADER", "Naive Bayes"], index=0)
     
     progress_bar = st.progress(0)
-
     if sentiment_method == "VADER":
-        df = preprocess_and_analyze(df, "VADER")
+        review_df = preprocess_and_analyze(review_df, "VADER")
     else:
-        df = preprocess_and_analyze(df, "Naive Bayes")
-
+        review_df = preprocess_and_analyze(review_df, "Naive Bayes")
     progress_bar.progress(100)
 
     # Create tabs for different analyses
     overview_tab, wordclouds_tab, business_tab = st.tabs(["Overview", "Wordclouds", "Business Search"])
     with overview_tab:
-        overview(df)
+        overview(review_df, user_df, business_df)
     
     with wordclouds_tab:
-        extras(df)
+        extras(review_df)
     
     with business_tab:
-        business_search(businesses_df, df)
+        business_search(business_df, review_df)

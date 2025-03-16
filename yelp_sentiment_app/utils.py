@@ -5,7 +5,7 @@ import re
 from multiprocessing import Pool, cpu_count
 import streamlit as st
 import tempfile
-import json
+
 
 # Download necessary NLTK resources
 nltk.download('vader_lexicon')
@@ -20,20 +20,28 @@ def load_large_data(uploaded_file, chunksize=10000, data_type="review"):
         tmp_path = tmp.name  
 
     data_chunks = []
-    with pd.read_json(tmp_path, lines=True, chunksize=chunksize) as reader:
-        for chunk in reader:
-            # Ensure missing columns are handled
-             # For review data, ensure the 'review_id' column is present
-            if data_type == "review" and "review_id" not in chunk.columns:
-                continue  
-            # For business data, you might check for a different column, e.g., 'business_id'
-            if data_type == "business" and "business_id" not in chunk.columns:
-                continue 
-            
-            processed_chunk = preprocess_text(chunk)
-            data_chunks.append(processed_chunk)
+    try:
+        with pd.read_json(tmp_path, lines=True, chunksize=chunksize, encoding='utf-8') as reader:
+            for chunk in reader:
+                # Ensure missing columns are handled
+                if data_type == "review" and "review_id" not in chunk.columns:
+                    continue  
+                if data_type == "business" and "business_id" not in chunk.columns:
+                    continue 
+                if data_type == "user" and "user_id" not in chunk.columns:
+                    continue
 
+                # Drop 'friends' column for user data
+                if data_type == "user" and "friends" in chunk.columns:
+                    chunk = chunk.drop(columns=["friends"])
+
+                processed_chunk = preprocess_text(chunk)
+                data_chunks.append(processed_chunk)
+    except ValueError as e:
+        print(f"Error loading file: {e}")
+    
     return pd.concat(data_chunks, ignore_index=True) if data_chunks else pd.DataFrame()
+
 
 @st.cache_data
 def preprocess_and_analyze(df, method, chunksize=5000):
@@ -90,6 +98,8 @@ def handle_duplicates(df):
         return df.drop_duplicates(subset=["review_id"], keep="first")
     if "business_id" in df.columns:
         return df.drop_duplicates(subset=["business_id"], keep="first")
+    if "user_id" in df.columns:
+        return df.drop_duplicates(subset=["user_id"], keep="first")
     return df  
 
 
