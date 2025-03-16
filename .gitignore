@@ -219,3 +219,10 @@ data/raw/yelp_academic_dataset_user.json
 /yelp_sentiment_app/pages/__pycache__
 /data/raw
 /yelp_sentiment_app/__pycache__
+/src1/__pycache__
+/data/intermediate
+/data/intermediate
+/src/__pycache__
+*.pyc
+data/intermediate/bow_vectors.csv
+/data/intermediate
