@@ -14,9 +14,8 @@ We target to build a tool that can help us categorize the sentiment of all the r
 ### Part 1: Notebooks
 00_data_preparation.ipynb: this notebook organizes Yelp reviews by month and year, saving the results to the specified output directory.
 01_data_cleaning.ipynb: this notebook cleans the review data by putting it to lowercase, removing special characters and numbers, removing duplicates and incomplete reviews. The file is then saved to data/intermediate.
-
 02_data_exploration.ipynb: this notebook converts the json files in data/raw to csv files.
-03_preprocessing.ipynb: this notebook manipulates the review texts. It removes the stopwords, tokenizes each review, then stemms and lemmatizes the tokens. Next with nltk package sentiment of each review is determined. Last a tf-idf and Bag-of-Words algorithm is implemented. The resulting files are saved to data/intermediate
+03_preprocessing.ipynb: this notebook manipulates the review texts. It removes the stopwords, tokenizes each review, then stemms and lemmatizes the tokens. Next with nltk package sentiment of each review is determined. Last a tf-idf and Bag-of-Words algorithm is implemented. The resulting files are saved to data/intermediate.
 04_modeling.ipynb: this notebook contains our machine learning algorithm (Naive Bayes: partially implemented, logistic regression..). It builds on the preprocessing steps (bag-of-words and tf-idf). 
 05_results.ipynb: this notebook shows some visualizations for our review data and creates a metric file in data/processed
 
