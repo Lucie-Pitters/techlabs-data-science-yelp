@@ -1,38 +1,32 @@
-# techlabs-data-science-yelp
-### Scope:
-You are a startup aiming to create a "tool" that can analyze text-based patterns and categorize them into meaningful groups. (very highlevel, but its your tasks also to rethink it later on :zwinkern: )
-### Your Responsibilities:
-1. Evaluate Data Availability:
-- Investigate the provided datasets: What formats are they in?
-- Plan how to upload and manage these datasets in a GitHub repository.
-- Determine how to connect the datasets effectively (hint: consider using a primary key to link data).
-2. Perform EDA (Exploratory Data Analysis):
-- Explore the datasets thoroughly, identify patterns, and understand the data structure.
-- Use EDA methods to analyze and visualize key insights.
-- Create a baseline model using the existing data.
-3. Next Steps:
-- Develop a Proof of Concept (POC).
-4. Build the Minimum Viable Product (MVP):
-- Your tool should analyze the comments section of the dataset and classify entries as positive, negative, and two additional categories that your team will define.
-- Enhance your tool by incorporating additional datasets and refining its functionality and visualization.
-- Plan how to present the final product with a clear vision of the end goal.
-### Tech Stack:
-- Python libraries recommendation: pandas, numpy, seaborn, matplotlib, scikit-learn, pytorch
-- These are the minimum required tools. Feel free to explore additional libraries or APIs as needed.
+## Abstract:  
 
-### Roles for the First Sprint (20.01.2025 - 03.02.2025):
-- PM: 
-@Linh Vo
-- EM: 
-@Marc Habersetzer
-- Doku: 
-@Lucie
+Our team develops a tool employing different types of models that attempts to analyze text-based patterns in given datasets from Yelp, which concerns various aspects of the Food & Beverage business on social media such as reviews, users, business, tips, check-in… The output is intended to provide categories that are meaningful to our client and help them with making important business decisions. We mainly focus on sentiment analysis in this particular project.
 
-##Meeting Protocol 24/01
-- created Kanban Tickets
-- discussed data upload
-- Next Meeting on Monday 27/01
-  
-##Meeting Protocol 27/01
-- Create & assign data cleaning/exploration tasks
-- Next Meeting on Friday 31/01
+## Overview:
+We are provided with 5 datasets that concern these things: reviews from customers, check-in time, information of the business and customers.
+We target to build a tool that can help us categorize the sentiment of all the reviews that customers left for the establishment that they visited on Yelp platform. This will help our client have an overview of the reality how customers really feel about the experience they received in different restaurants, thus making informed decisions accordingly. 
+
+## How to use our Sentiment App? 
+- First we need these libraries to be installed: streamlit, streamlit-navigation-bar, nltk, pandas, matplotlib, seaborn, wordcloud.
+- Next, we need to upload these 3 files to our app: yelp_academic_dataset_business.csv, yelp_academic_dataset_review.csv and yelp_academic_dataset_user.csv
+- Note that since the app cannot handle files that are too large, we had to shrink down the review file to only take the data in 01.2021 so that we can upload it.
+
+### Part 1: Notebooks
+00_data_preparation.ipynb: this notebook organizes Yelp reviews by month and year, saving the results to the specified output directory.
+01_data_cleaning.ipynb: this notebook cleans the review data by putting it to lowercase, removing special characters and numbers, removing duplicates and incomplete reviews. The file is then saved to data/intermediate.
+
+02_data_exploration.ipynb: this notebook converts the json files in data/raw to csv files.
+03_preprocessing.ipynb: this notebook manipulates the review texts. It removes the stopwords, tokenizes each review, then stemms and lemmatizes the tokens. Next with nltk package sentiment of each review is determined. Last a tf-idf and Bag-of-Words algorithm is implemented. The resulting files are saved to data/intermediate
+04_modeling.ipynb: this notebook contains our machine learning algorithm (Naive Bayes: partially implemented, logistic regression..). It builds on the preprocessing steps (bag-of-words and tf-idf). 
+05_results.ipynb: this notebook shows some visualizations for our review data and creates a metric file in data/processed
+
+### Part 2: Sentiment App
+In the terminal of the “yelp_sentiment_app” folder of the project, run: streamlit run main.py
+The app will automatically opens in the web browser.
+Choose the year, month of the review you want to see the analysis. 
+Choose the model you want to apply to the reviews for the sentiment analysis.
+The app will then load the chosen time of the review and show the sentiment analysis (positive/negative/neutral..) based on the model that you chose.
+
+## Acknowlegment
+
+Special thanks to Techlabs and our Mentor, Nopparat, for your relentless efforts in helping us finish the project. Without your help, this would not have been possible.
