@@ -29,7 +29,7 @@ def preprocess_text(text):
     return " ".join(lemmatized_tokens)  
 
 # Load dataset
-df = pd.read_json("data/raw/reviews_2010.json", lines=True)
+df = pd.read_json("data/raw/reviews_2021-01.json", lines=True)
 
 # Apply text preprocessing
 df['clean_text'] = df['text'].apply(preprocess_text)
@@ -42,11 +42,11 @@ custom_stopwords = ["restaurant", "food", "place", "service", "menu", "great", "
 
 # TF-IDF Vectorization with Optimized Parameters
 vectorizer = TfidfVectorizer(
-    max_features=1000000,  
+    max_features=400000,  
     sublinear_tf=True,
-    max_df=0.75,  
+    max_df=0.5,  
     min_df=3,  
-    ngram_range=(1,2),  
+    ngram_range=(1,3),  
     stop_words=custom_stopwords,  
     norm='l2'
 )
@@ -64,8 +64,7 @@ df['sentiment_neg'] = df['text'].apply(lambda x: sia.polarity_scores(x)['neg'])
 df['sentiment_neu'] = df['text'].apply(lambda x: sia.polarity_scores(x)['neu'])
 
 # Convert additional features to NumPy array
-X_additional = np.array(df[['review_length', 'num_exclamation', 'avg_word_length', 
-                            'sentiment_pos', 'sentiment_neg', 'sentiment_neu']])
+X_additional = np.array(df[['review_length', 'num_exclamation', 'avg_word_length', 'sentiment_pos', 'sentiment_neg', 'sentiment_neu']])
 
 # Combine TF-IDF with additional features
 X_final = hstack((X_tfidf, X_additional))  
@@ -83,7 +82,7 @@ class_weight_dict = dict(zip(np.unique(y_resampled), class_weights))
 X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2, stratify=y_resampled, random_state=42)
 
 # Optimize Naive Bayes Model with Grid Search
-param_grid = {'alpha': np.linspace(0.001, 2.0, 30)}  
+param_grid = {'alpha': np.linspace(0.001, 2.0, 20)}  
 grid_search = GridSearchCV(ComplementNB(), param_grid, cv=10, scoring='accuracy', n_jobs=-1)  
 grid_search.fit(X_train, y_train)
 best_alpha = grid_search.best_params_['alpha']
