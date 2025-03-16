@@ -15,14 +15,23 @@ uploaded_reviews = st.file_uploader("Upload Yelp Reviews (JSON)", type=["json"])
 uploaded_businesses = st.file_uploader("Upload Yelp Business Data (JSON)", type=["json"])
 
 def overview(df):
+    if df.empty:
+        st.warning("No reviews available for this selection.")
+        return
 
-    #Time period
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])  # Remove invalid dates
+
+     #Time period
     min_date = df["date"].min().date()
     max_date = df["date"].max().date()
     time_range = st.date_input("Select Time Period", [min_date, max_date], min_value=min_date, max_value=max_date)
 
-    if time_range:
-        df = df[(df["date"] >= pd.to_datetime(time_range[0])) & (df["date"] <= pd.to_datetime(time_range[1]))]
+    df = df[(df["date"] >= pd.to_datetime(time_range[0])) & (df["date"] <= pd.to_datetime(time_range[1]))]
+
+    if df.empty:
+        st.warning("No reviews in the selected time range.")
+        return
     
     # Summary Statistics
     total_reviews = len(df)
@@ -53,6 +62,8 @@ def overview(df):
         st.write("### Sentiment Distribution Over Time")
         time_option = st.selectbox("Select Time Interval", ["Day", "Month", "Year"], key=f"download_{uuid.uuid4()}")
 
+        df["time_group"] = df["date"].dt.to_period("M")  # Default to monthly grouping
+
         if time_option == "Day":
             df["time_group"] = df["date"].dt.date
         elif time_option == "Month":
@@ -61,10 +72,15 @@ def overview(df):
             df["time_group"] = df["date"].dt.to_period("Y")
 
         sentiment_over_time = df.groupby(["time_group", "Sentiment"]).size().unstack().fillna(0)
+        sentiment_over_time.index = sentiment_over_time.index.astype(str)  # Convert index to string
+
+        if sentiment_over_time.empty or sentiment_over_time.isnull().values.all():
+            st.warning("Not enough data to plot sentiment trends.")
+            return
 
         # Create a transparent background for the plot
         fig, ax = plt.subplots(figsize=(10, 5))
-        sentiment_over_time.plot(kind="line", ax=ax, marker="o")
+        sentiment_over_time.plot(kind="line", ax=ax, marker="o", markersize=2)
         plt.xlabel("Time")
         plt.ylabel("Review Count")
         plt.title(f"Sentiment Trends Over Time ({time_option})")
@@ -91,14 +107,21 @@ def extras(df):
 
 def business_search(businesses_df, reviews_df):
     st.subheader("🔍 Search for a Business")
-    business_names = businesses_df['name'].unique()
+    
+    # Filter businesses that have at least one review
+    businesses_with_reviews = businesses_df[businesses_df['business_id'].isin(reviews_df['business_id'].unique())]
+    
+    # Get unique business names from the filtered DataFrame
+    business_names = businesses_with_reviews['name'].unique()
+    
+    # Select a business from the dropdown
     selected_business = st.selectbox("Select a Business", business_names, index=0)
     
     if selected_business:
-        selected_business_id = businesses_df[businesses_df['name'] == selected_business]['business_id'].values[0]
+        selected_business_id = businesses_with_reviews[businesses_with_reviews['name'] == selected_business]['business_id'].values[0]
         business_df = reviews_df[reviews_df['business_id'] == selected_business_id]
         
-        business_info = businesses_df[businesses_df['name'] == selected_business].iloc[0]
+        business_info = businesses_with_reviews[businesses_with_reviews['name'] == selected_business].iloc[0]
         st.markdown(f"### 📍 {business_info['name']}")
         st.write(f"**Address:** {business_info['address']}, {business_info['city']}, {business_info['state']} {business_info['postal_code']}")
         st.write(f"**Rating:** ⭐ {business_info['stars']} ({business_info['review_count']} reviews)")
@@ -110,21 +133,33 @@ def business_search(businesses_df, reviews_df):
         else:
             overview(business_df)
 
+
 if uploaded_reviews and uploaded_businesses:
     df = load_large_data(uploaded_reviews)
+
+    # Extract available years from the dataset
+    df['date'] = pd.to_datetime(df['date'])  # Ensure date is in datetime format
+    available_years = sorted(df['date'].dt.year.unique(), reverse=True)
+
+    # User selects a year to analyze
+    selected_year = st.selectbox("Select a Year to Analyze", available_years, index=0)
+
+    # Filter dataset by selected year
+    df = df[df['date'].dt.year == selected_year]
+
     businesses_df = load_large_data(uploaded_businesses, chunksize=10000, data_type="business")
     sentiment_method = st.selectbox("Choose Sentiment Analysis Method", ["VADER", "Naive Bayes"], index=0)
     
     progress_bar = st.progress(0)
-    
+
     if sentiment_method == "VADER":
         df = preprocess_and_analyze(df, "VADER")
     else:
         df = preprocess_and_analyze(df, "Naive Bayes")
-    
-    df['date'] = pd.to_datetime(df['date'])
+
     progress_bar.progress(100)
-    
+
+    # Create tabs for different analyses
     overview_tab, wordclouds_tab, business_tab = st.tabs(["Overview", "Wordclouds", "Business Search"])
     with overview_tab:
         overview(df)
@@ -134,20 +169,3 @@ if uploaded_reviews and uploaded_businesses:
     
     with business_tab:
         business_search(businesses_df, df)
-
-
-
-
-
-#tommorow
-#add two aditional categories
-#add bayes
-#pie chart service or product related review
-#two gram wordclouds
-#check with big data
-#clean up
-#notebooks?? 
-
-#team
-#prepare pitch deck slides
-#prepare blog post
