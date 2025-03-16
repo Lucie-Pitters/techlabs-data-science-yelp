@@ -5,6 +5,8 @@ from utils import load_large_data, preprocess_and_analyze
 from wordcloud import WordCloud
 import uuid
 
+from naive_bayes import train_naive_bayes_model
+
 st.set_page_config(layout="wide")
 st.title("📊 Yelp Reviews Sentiment Analysis")
 st.text("This tool allows you to upload Yelp reviews and business data, analyze the sentiment of customer feedback, and explore visual insights such as sentiment distribution over time, word clouds, and business-specific sentiment analysis.")
@@ -73,7 +75,7 @@ def overview(df, user_df, business_df):
             if val == "Positive":
                 color = 'lightgreen'
             elif val == "Negative":
-                color = 'lightred'
+                color = 'tomato'
             return f'background-color: {color}'
 
         # Apply color formatting to the Sentiment column
@@ -87,31 +89,31 @@ def overview(df, user_df, business_df):
 
 
     with col2:
-        st.write("### Sentiment Distribution Over Time")
-        time_option = st.selectbox("Select Time Interval", ["Day", "Month", "Year"], key=f"download_{uuid.uuid4()}")
-
-        df["time_group"] = df["date"].dt.to_period("M")  # Default to monthly grouping
-
-        if time_option == "Day":
-            df["time_group"] = df["date"].dt.date
-        elif time_option == "Month":
-            df["time_group"] = df["date"].dt.to_period("M")
-        else:
-            df["time_group"] = df["date"].dt.to_period("Y")
-
+        
+        # Group reviews by day and sentiment
+        df["time_group"] = df["date"].dt.to_period("D")
         sentiment_over_time = df.groupby(["time_group", "Sentiment"]).size().unstack().fillna(0)
-        sentiment_over_time.index = sentiment_over_time.index.astype(str)  # Convert index to string
+        sentiment_over_time.index = sentiment_over_time.index.astype(str)
 
-        if sentiment_over_time.empty or sentiment_over_time.isnull().values.all():
-            st.warning("Not enough data to plot sentiment trends.")
-            return
+        # Define the color mapping for each sentiment category
+        color_mapping = {"Negative": "tomato", "Neutral": "gray", "Positive": "lightgreen"}
 
-        # Create a transparent background for the plot
+        # Create the plot and iterate only over the sentiments that exist in your data
         fig, ax = plt.subplots(figsize=(10, 5))
-        sentiment_over_time.plot(kind="line", ax=ax, marker="o", markersize=2)
+        for sentiment, color in color_mapping.items():
+            if sentiment in sentiment_over_time.columns:
+                ax.plot(
+                sentiment_over_time.index,
+                sentiment_over_time[sentiment],
+                marker="o",
+                markersize=2,
+                color=color,
+                label=sentiment,
+                )
         plt.xlabel("Time")
+        plt.xticks(rotation=45, ha="right")
         plt.ylabel("Review Count")
-        plt.title(f"Sentiment Trends Over Time ({time_option})")
+        plt.title("Sentiment Trends Over Time")
         plt.legend(title="Sentiment")
         st.pyplot(fig)
 
@@ -121,17 +123,24 @@ def extras(df):
     
     col1, col2 = st.columns(2)
     
+    # Iterate over each sentiment category
     for i, sentiment in enumerate(["Positive", "Negative", "Neutral"]):
-        text = ' '.join(df[df['Sentiment'] == sentiment]['text'])
-        wordcloud = WordCloud(width=800, height=400, background_color=None, mode="RGBA").generate(text)
-        if i % 2 == 0:
-            with col1:
-                st.write(f"#### {sentiment} Reviews WordCloud")
-                st.image(wordcloud.to_array())
-        else:
-            with col2:
-                st.write(f"#### {sentiment} Reviews WordCloud")
-                st.image(wordcloud.to_array())
+        # Gather text for the current sentiment
+        sentiment_text = ' '.join(df[df['Sentiment'] == sentiment]['text'])
+        
+        # Only generate and display a wordcloud if there is any text
+        if sentiment_text.strip():  # if not empty after stripping whitespace
+            wordcloud = WordCloud(width=800, height=400, background_color=None, mode="RGBA").generate(sentiment_text)
+            if i % 2 == 0:
+                with col1:
+                    st.write(f"#### {sentiment} Reviews WordCloud")
+                    st.image(wordcloud.to_array())
+            else:
+                with col2:
+                    st.write(f"#### {sentiment} Reviews WordCloud")
+                    st.image(wordcloud.to_array())
+        # Otherwise, skip displaying this wordcloud without showing an error.
+
 
 def business_search(businesses_df, reviews_df):
     st.subheader("🔍 Search for a Business")
@@ -184,13 +193,25 @@ if "review" in datasets and "business" in datasets:
 
     business_df = load_large_data(datasets["business"], chunksize=10000, data_type="business")
     user_df = load_large_data(datasets["user"], chunksize=10000, data_type="user")
-    sentiment_method = st.selectbox("Choose Sentiment Analysis Method", ["VADER", "Naive Bayes"], index=0)
+    sentiment_method = st.selectbox("Choose Sentiment Analysis Method", ["VADER", "Naive Bayes", "Multinominal Regression"], index=0)
     
+    if "vectorizer" not in st.session_state or "nb_classifier" not in st.session_state:
+        with st.spinner("Training Naive Bayes model..."):
+            vectorizer, nb_classifier = train_naive_bayes_model(review_df)
+            st.session_state.vectorizer = vectorizer
+            st.session_state.nb_classifier = nb_classifier
+        st.success("Model trained and stored successfully!")
+
     progress_bar = st.progress(0)
     if sentiment_method == "VADER":
         review_df = preprocess_and_analyze(review_df, "VADER")
-    else:
+    elif sentiment_method == "Naive Bayes":
         review_df = preprocess_and_analyze(review_df, "Naive Bayes")
+    elif sentiment_method == "Multinominal Regression":
+        review_df = preprocess_and_analyze(review_df, "Multinominal Regression")
+    else:
+        st.error("Invalid method selected.")
+
     progress_bar.progress(100)
 
     # Create tabs for different analyses

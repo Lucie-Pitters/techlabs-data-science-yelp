@@ -5,6 +5,7 @@ import re
 from multiprocessing import Pool, cpu_count
 import streamlit as st
 import tempfile
+from naive_bayes import analyze_sentiment_bayes, train_naive_bayes_model
 
 
 # Download necessary NLTK resources
@@ -53,8 +54,12 @@ def preprocess_and_analyze(df, method, chunksize=5000):
             texts = chunk['text'].tolist()
             if method == "VADER":
                 sentiments = list(pool.imap(analyze_sentiment_vader, texts, chunksize=1000))
-            else:
+            elif method == "Naive Bayes":
                 sentiments = list(pool.imap(analyze_sentiment_bayes, texts, chunksize=1000))
+            elif method == "Multinominal Regression":
+                sentiments = list(pool.imap(analyze_sentiment_regression, texts, chunksize=1000))
+            else:
+                raise ValueError("Invalid method selected.")    
             chunk['Sentiment'] = pd.Categorical(sentiments, categories=["Positive", "Negative", "Neutral"])
             df_chunks.append(chunk)
     
@@ -71,8 +76,8 @@ def analyze_sentiment_vader(text):
     else:
         return "Neutral"
 
-def analyze_sentiment_bayes(text):
-    """Placeholder function for Naive Bayes classifier."""
+def analyze_sentiment_regression(text):
+    """Placeholder function for Multinominal Regression classifier."""
     return "Positive"
 
 def preprocess_text(df):
